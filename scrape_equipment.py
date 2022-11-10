@@ -1,9 +1,11 @@
 import requests
 from bs4 import BeautifulSoup
+import json
+
+product_list = []
 
 class Product:
     name = ""
-    img_name = ""
     img_url = ""
     descr = ""
     specifications = []
@@ -63,7 +65,7 @@ def parse_product_page(link):
             dic = {}
             cols = row.find_all("td")
             for i in range(len(cols)):
-                dic[headers[i]] = [cols[i].text]
+                dic[headers[i]] = [cols[i].text.strip()]
             if bool(dic):
                 print(dic)
                 p.specifications.append(dic)
@@ -71,12 +73,39 @@ def parse_product_page(link):
         print("Could not get specification table for item")
     # ...........................
 
+    # get description
+    # ...........................
+    ps = soup.find_all("p")
+    for i in ps:
+        if(i.text.find("Information") != -1):
+            continue
+        if(i.find("b")):
+            p.descr = i.text.strip()
+            break
+    print("DESC: " + p.descr)
+    print("NAME: " + p.name)
+    
+    d = {}
+    d['name'] = p.name
+    d['img_url'] = p.img_url
+    d['descr'] = p.descr
+    d['spec'] = p.specifications
+    product_list.append(d)
+
+    # ...........................
+
 if __name__ == "__main__":
     URL = "https://elite-dangerous.fandom.com/wiki/Category:Equipment"
     page = requests.get(URL)
     soup = BeautifulSoup(page.content, "html.parser")
     products = soup.find_all("a", class_="category-page__member-link")
+    
     for e in products:
+        p = Product()
         parse_product_page(e["href"])
-
+    pr_json = json.dumps(product_list, indent=2)
+    f = open("out.json", 'w')
+    f.write(pr_json)
+    f.close()
+    
 
