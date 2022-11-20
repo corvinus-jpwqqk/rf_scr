@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import json
 
 product_list = []
+spec_headers_all = []
 
 class Product:
     name = ""
@@ -23,12 +24,18 @@ def parse_product_page(link):
     url = "https://elite-dangerous.fandom.com" + link
     page = requests.get(url)
     soup = BeautifulSoup(page.content, "html.parser")
-    p = Product()
+    p = {}
+    
+    p['name'] = ""
+    p['img_url'] = ""
+    p['descr'] = ""
+    p['specifications'] = []
+
     # ...........................
     
     # get name
     # ...........................
-    p.name = soup.find(id="firstHeading").text.strip()
+    p['name'] = soup.find(id="firstHeading").text.strip()
     # ...........................
 
     # get img
@@ -36,19 +43,19 @@ def parse_product_page(link):
     err = 0
     try:
         img = soup.find("img", class_="pi-image-thumbnail")
-        p.img_url = get_img_url(img)
-        print(p.name + " : " + p.img_url)
+        p['img_url'] = get_img_url(img)
+        print(p['name'] + " : " + p['img_url'])
     except Exception as ex: 
         err += 1
-    if(len(p.img_url) == 0):
+    if(len(p['img_url']) == 0):
         try:
             img = soup.find("img", class_="thumbimage")
-            p.img_url = get_img_url(img)
-            print(p.name + " : " + p.img_url)
+            p['img_url'] = get_img_url(img)
+            print(p['name'] + " : " + p['img_url'])
         except Exception as ex:
             err += 1
     if(err == 2):
-        print("Could not find image for " + p.name)
+        print("Could not find image for " + p['name'])
     # ...........................
 
     # get specializations table
@@ -59,6 +66,8 @@ def parse_product_page(link):
         header_items = table.find_all("th")
         for i in header_items:
             headers.append(i.text.strip())
+            if(i.text.strip() not in spec_headers_all):
+                spec_headers_all.append(i.text.strip())
         tbody = table.find("tbody")
         rows = tbody.find_all("tr")
         for row in rows:
@@ -68,7 +77,7 @@ def parse_product_page(link):
                 dic[headers[i]] = [cols[i].text.strip()]
             if bool(dic):
                 print(dic)
-                p.specifications.append(dic)
+                p['specifications'].append(dic)
     except Exception:
         print("Could not get specification table for item")
     # ...........................
@@ -80,17 +89,9 @@ def parse_product_page(link):
         if(i.text.find("Information") != -1):
             continue
         if(i.find("b")):
-            p.descr = i.text.strip()
+            p['descr'] = i.text.strip()
             break
-    print("DESC: " + p.descr)
-    print("NAME: " + p.name)
-    
-    d = {}
-    d['name'] = p.name
-    d['img_url'] = p.img_url
-    d['descr'] = p.descr
-    d['spec'] = p.specifications
-    product_list.append(d)
+    product_list.append(p)
 
     # ...........................
 
@@ -101,11 +102,12 @@ if __name__ == "__main__":
     products = soup.find_all("a", class_="category-page__member-link")
     
     for e in products:
-        p = Product()
         parse_product_page(e["href"])
     pr_json = json.dumps(product_list, indent=2)
     f = open("out.json", 'w')
     f.write(pr_json)
     f.close()
+    print("ALL HEADERS:")
+    print(spec_headers_all)
     
 
