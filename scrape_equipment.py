@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import json
+from PIL import Image
 
 product_list = []
 spec_headers_all = []
@@ -57,7 +58,7 @@ def parse_product_page(link):
             err += 1
     if(err == 2):
         print("Could not find image for " + p['name'])
-    if(err == 0):
+    else:    
         if(p['img_url'][-1] == '/'):
             p['img_url'] = p['img_url'][:-1]
         p['img_name'] = p['img_url'].split('/')[-1]
@@ -100,14 +101,28 @@ def parse_product_page(link):
 
     # ...........................
 
+def download_image(e):
+    url = e['img_url']
+    img_name = e['img_name']
+    if(url and img_name and img_name.find('.') != -1):
+        print('Trying to download image: ' + img_name)
+        img = Image.open(requests.get(url, stream = True).raw)
+        img.save('./images/' + img_name)
+        print('Image successfully downloaded to: ' + 'images/' + img_name)
+
+
+
 if __name__ == "__main__":
     URL = "http://elite-dangerous.fandom.com/wiki/Category:Equipment"
     page = requests.get(URL)
     soup = BeautifulSoup(page.content, "html.parser")
-    products = soup.find_all("a", class_="category-page__member-link")
-    
+    products = soup.find_all("a", class_="category-page__member-link") 
+
     for e in products:
         parse_product_page(e["href"])
+    for p in product_list:
+        print('img_name: ' + p['img_name'])
+        download_image(p)
     pr_json = json.dumps(product_list, indent=2)
     f = open("out.json", 'w')
     f.write(pr_json)
