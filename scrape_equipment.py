@@ -28,6 +28,7 @@ def parse_product_page(link):
     
     p['name'] = ""
     p['img_url'] = ""
+    p['img_name'] = ""
     p['descr'] = ""
     p['specifications'] = []
 
@@ -56,6 +57,10 @@ def parse_product_page(link):
             err += 1
     if(err == 2):
         print("Could not find image for " + p['name'])
+    if(err == 0):
+        if(p['img_url'][-1] == '/'):
+            p['img_url'] = p['img_url'][:-1]
+        p['img_name'] = p['img_url'].split('/')[-1]
     # ...........................
 
     # get specializations table
@@ -96,7 +101,7 @@ def parse_product_page(link):
     # ...........................
 
 if __name__ == "__main__":
-    URL = "https://elite-dangerous.fandom.com/wiki/Category:Equipment"
+    URL = "http://elite-dangerous.fandom.com/wiki/Category:Equipment"
     page = requests.get(URL)
     soup = BeautifulSoup(page.content, "html.parser")
     products = soup.find_all("a", class_="category-page__member-link")
