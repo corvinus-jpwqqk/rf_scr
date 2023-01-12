@@ -47,7 +47,7 @@ def parse_product_page(link):
         img = soup.find("img", class_="pi-image-thumbnail")
         p['img_url'] = get_img_url(img)
         print(p['name'] + " : " + p['img_url'])
-    except Exception as ex: 
+    except Exception as ex:
         err += 1
     if(len(p['img_url']) == 0):
         try:
